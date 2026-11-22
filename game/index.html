@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TALLOWLIGHT — Three Heists by Lamplight</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b0e18; font-family: Georgia, 'Times New Roman', serif; }
+  #app { width: 1280px; height: 720px; margin: 0 auto; position: relative; background: #0b0e18; color: #e8ddc4; }
+  #hud-top { height: 64px; display: flex; align-items: center; gap: 14px; padding: 0 14px; background: #10142a; border-bottom: 2px solid #2a2f52; box-sizing: border-box; }
+  #hud-top .title { font-size: 26px; font-weight: bold; color: #f2c14e; letter-spacing: 3px; line-height: 1; }
+  #hud-top .heist { font-size: 13px; color: #b9a86a; line-height: 1.1; }
+  #hud-top .objective { flex: 1; min-width: 0; text-align: center; font-size: 13px; color: #e8ddc4; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill { padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; letter-spacing: 1px; background: #1c2338; color: #9fb3d9; }
+  .pill.good { background: #14532d; color: #86efac; }
+  .pill.warn { background: #713f12; color: #fcd34d; }
+  .pill.bad { background: #7f1d1d; color: #fca5a5; }
+  .stat { text-align: center; line-height: 1.05; }
+  .stat b { display: block; font-size: 16px; color: #f2c14e; }
+  .stat span { font-size: 10px; letter-spacing: 1px; color: #8b93b8; }
+  #game { display: block; width: 1280px; height: 628px; }
+  #hud-bottom { height: 28px; display: flex; align-items: center; justify-content: center; gap: 18px; background: #10142a; border-top: 2px solid #2a2f52; font-size: 12px; color: #b9a86a; letter-spacing: 0.5px; box-sizing: border-box; }
+  #notes { position: absolute; left: 14px; top: 78px; width: 300px; background: rgba(10, 13, 28, 0.92); border: 1px solid #f2c14e; border-radius: 6px; padding: 12px 14px; font-size: 13px; line-height: 1.5; z-index: 5; }
+  #notes h3 { margin: 0 0 6px; font-size: 14px; letter-spacing: 2px; color: #f2c14e; }
+  #notes ul { margin: 0; padding-left: 18px; }
+  #notes li { margin: 3px 0; color: #d8cfae; }
+  #notes p { margin: 8px 0 0; font-style: italic; color: #9aa3c4; font-size: 12px; }
+  .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(8, 10, 22, 0.82); z-index: 10; text-align: center; }
+  .overlay h1 { font-size: 52px; color: #f2c14e; letter-spacing: 8px; margin: 0 0 8px; }
+  .overlay h2 { font-size: 22px; color: #e8ddc4; margin: 0 0 18px; font-weight: normal; letter-spacing: 2px; }
+  .overlay p { font-size: 15px; color: #b9c0d8; line-height: 1.7; margin: 4px 0; max-width: 640px; }
+  .overlay .keys { color: #f2c14e; font-size: 14px; letter-spacing: 1px; }
+  .hidden { display: none !important; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud-top">
+    <div><div class="title">TALLOWLIGHT</div><div class="heist" id="hud-heist">HEIST 1 — THE CHANDLER'S SHOP</div></div>
+    <div class="objective" id="hud-objective">ESCAPE THROUGH THE HATCH, UNSEEN — LIFT THE BRASS MOTH</div>
+    <div class="stat"><span>DETECTION</span><b class="pill good" id="hud-detection">UNSEEN</b></div>
+    <div class="stat"><span>VISIBILITY</span><b class="pill good" id="hud-visibility">HIDDEN</b></div>
+    <div class="stat"><span>PEBBLES</span><b id="hud-pebbles">●●●●●</b></div>
+    <div class="stat"><span>LOOT</span><b id="hud-loot">0/10</b></div>
+    <div class="stat"><span>PRIZE</span><b id="hud-prize">BRASS MOTH —</b></div>
+    <div class="stat"><span>EXIT</span><b id="hud-exit">EXIT LOCKED</b></div>
+    <div class="stat"><span>SPOTTED</span><b id="hud-spotted">0</b></div>
+    <div class="stat"><span>TIME</span><b id="hud-timer">00:00</b></div>
+  </div>
+  <canvas id="game" width="1280" height="628" aria-label="Tallowlight: top-down stealth heist game"></canvas>
+  <div id="hud-bottom"><span>WASD / ARROWS move</span><span>SHIFT sneak</span><span>MOUSE aim, CLICK throw a pebble</span><span>E interact</span><span>H field notes</span><span>M mute</span><span>ESC pause</span><span>R restart level</span></div>
+  <div id="notes">
+    <h3>FIELD NOTES</h3>
+    <ul>
+      <li>Warden + vision cone (what they see)</li>
+      <li>Blind spot behind cover: safe</li>
+      <li>Lamplight: you are seen from afar</li>
+      <li>Tall grass: hidden unless close</li>
+      <li>Creaky boards: loud even sneaking</li>
+      <li>Rings: noise, and where wardens walk</li>
+      <li>Exit hatch: opens once you hold the prize</li>
+    </ul>
+    <p>Patrols repeat — learn them, wait, then move. A near miss only makes them suspicious: break line of sight and the meter drains.</p>
+  </div>
+  <div id="screen-title" class="overlay">
+    <h1>TALLOWLIGHT</h1>
+    <h2>THREE HEISTS BY LAMPLIGHT</h2>
+    <p>Steal the Brass Moth from three guarded houses and slip out unseen. Learn the wardens' patrols, keep to the shadows, and never let a cone touch you.</p>
+    <p class="keys">PRESS ENTER TO START &nbsp;·&nbsp; 1 / 2 / 3 CHOOSE A HEIST</p>
+    <p>1 The Chandler's Shop &nbsp;·&nbsp; 2 The Gilded Archive &nbsp;·&nbsp; 3 The Clockmaker's Vault</p>
+  </div>
+  <div id="screen-paused" class="overlay hidden"><h1>PAUSED</h1><p class="keys">ESC TO RESUME &nbsp;·&nbsp; R RESTART LEVEL</p></div>
+  <div id="screen-caught" class="overlay hidden"><h1>CAUGHT</h1><h2>A WARDEN LAID HANDS ON YOU</h2><p class="keys">PRESS R TO TRY THE HEIST AGAIN</p></div>
+  <div id="screen-level" class="overlay hidden"><h1>HEIST COMPLETE</h1><h2 id="level-summary"></h2><p class="keys">PRESS ENTER FOR THE NEXT HEIST</p></div>
+  <div id="screen-win" class="overlay hidden"><h1>THE BRASS MOTH IS YOURS</h1><h2 id="win-summary"></h2><p class="keys">PRESS ENTER TO PLAY AGAIN</p></div>
+  <p id="status" role="status" aria-live="polite"></p>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
